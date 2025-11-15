@@ -3,11 +3,18 @@ import requests
 from typing import List, Optional
 from datetime import datetime
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
-from ratelimit import limits, sleep_and_retry
+try:
+    from ratelimit import limits, sleep_and_retry
+except ImportError:
+    # Fallback to shim if ratelimit not available
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from ratelimit_shim import limits, sleep_and_retry
 import structlog
 
-from ..config.settings import Settings
-from .models import Draw
+from config.settings import Settings
+from data.models import Draw
 
 logger = structlog.get_logger()
 

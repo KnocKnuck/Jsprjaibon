@@ -3,10 +3,10 @@ from typing import List, Optional
 from datetime import datetime
 import structlog
 
-from ..config.settings import Settings
-from .api_client import EuromillionsAPIClient
-from .cache import DrawCache
-from .models import Draw
+from config.settings import Settings
+from data.api_client import EuromillionsAPIClient
+from data.cache import DrawCache
+from data.models import Draw
 
 logger = structlog.get_logger()
 

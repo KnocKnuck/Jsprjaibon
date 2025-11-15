@@ -10,4 +10,14 @@ This module handles:
 
 from typing import List
 
-__all__: List[str] = []
+from .base import BaseModel
+from .random_forest import RandomForestModel
+from .lstm import LSTMModel
+from .registry import ModelRegistry
+
+__all__: List[str] = [
+    'BaseModel',
+    'RandomForestModel',
+    'LSTMModel',
+    'ModelRegistry'
+]

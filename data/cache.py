@@ -7,8 +7,8 @@ from datetime import datetime
 from pathlib import Path
 import structlog
 
-from ..config.settings import Settings
-from .models import Draw
+from config.settings import Settings
+from data.models import Draw
 
 logger = structlog.get_logger()
 
