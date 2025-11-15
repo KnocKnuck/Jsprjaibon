@@ -1,0 +1,43 @@
+# Euromillions ML Predictor Configuration
+# This is the default configuration file. Copy to config.local.yaml for custom settings.
+
+api:
+  base_url: "https://euromillions.api.pedromealha.dev"
+  timeout: 30
+  rate_limit: 2  # seconds between requests
+  retry_attempts: 4
+  retry_backoff: 2  # exponential backoff multiplier
+
+data:
+  cache_dir: "./data/cache"
+  raw_dir: "./data/raw"
+  processed_dir: "./data/processed"
+  cache_ttl_historical: 0  # Never expire (immutable)
+  cache_ttl_current_year: 86400  # 24 hours in seconds
+
+lottery:
+  numbers_range: [1, 50]
+  stars_range: [1, 12]
+  numbers_count: 5
+  stars_count: 2
+
+models:
+  save_dir: "./models"
+  lstm_threshold: 300  # Minimum draws required for LSTM training
+  default_model: "auto"  # Options: auto, lstm, random_forest
+
+prediction:
+  grids_count: 2
+  confidence_threshold: 0.7
+
+output:
+  verbosity: "normal"  # Options: quiet, normal, verbose
+  color_theme: "dark"  # Options: dark, light, high-contrast
+  show_disclaimer: true
+
+logging:
+  level: "INFO"  # Options: DEBUG, INFO, WARNING, ERROR, CRITICAL
+  file: "./logs/euromillions.log"
+  max_bytes: 10485760  # 10MB
+  backup_count: 5
+  format: "json"  # Options: json, text
