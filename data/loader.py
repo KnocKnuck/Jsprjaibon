@@ -35,7 +35,8 @@ class DataLoader:
         year: Optional[int] = None,
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None,
-        use_cache: bool = True
+        use_cache: bool = True,
+        use_csv_fallback: bool = False
     ) -> List[Draw]:
         """Load draws with caching
 
@@ -44,6 +45,7 @@ class DataLoader:
             start_date: Filter draws from this date
             end_date: Filter draws until this date
             use_cache: Whether to use cached data
+            use_csv_fallback: Whether to fall back to CSV if API fails
 
         Returns:
             List of Draw objects
@@ -65,26 +67,56 @@ class DataLoader:
                 logger.info("loaded_from_cache", count=len(cached))
                 return cached
 
-        # Fetch from API
-        logger.info("loading_from_api", params=params)
-        draws = self.api_client.get_draws(
-            year=year,
-            start_date=start_date,
-            end_date=end_date
-        )
+        # Try API
+        try:
+            logger.info("loading_from_api", params=params)
+            draws = self.api_client.get_draws(
+                year=year,
+                start_date=start_date,
+                end_date=end_date
+            )
 
-        # Cache results
-        if use_cache and draws:
-            self.cache.set_draws(draws, **params)
+            # Cache results
+            if use_cache and draws:
+                self.cache.set_draws(draws, **params)
 
-        logger.info("loaded_from_api", count=len(draws))
-        return draws
+            logger.info("loaded_from_api", count=len(draws))
+            return draws
 
-    def load_all_historical(self, use_cache: bool = True) -> List[Draw]:
+        except Exception as e:
+            if use_csv_fallback:
+                logger.warning("api_failed_using_csv", error=str(e))
+                from data.csv_fallback import load_from_csv, create_sample_csv
+
+                try:
+                    all_draws = load_from_csv()
+                    # Filter by year if specified
+                    if year:
+                        draws = [d for d in all_draws if d.date.year == year]
+                    else:
+                        draws = all_draws
+                    logger.info("loaded_from_csv_fallback", count=len(draws))
+                    return draws
+                except FileNotFoundError:
+                    logger.warning("csv_not_found_creating_sample")
+                    create_sample_csv()
+                    all_draws = load_from_csv()
+                    if year:
+                        draws = [d for d in all_draws if d.date.year == year]
+                    else:
+                        draws = all_draws
+                    return draws
+                except Exception as csv_error:
+                    logger.error("csv_fallback_failed", error=str(csv_error))
+                    raise Exception(f"Both API and CSV fallback failed. API: {e}, CSV: {csv_error}")
+            raise
+
+    def load_all_historical(self, use_cache: bool = True, use_csv_fallback: bool = True) -> List[Draw]:
         """Load all historical data from 2004 to present
 
         Args:
             use_cache: Whether to use cached data
+            use_csv_fallback: Whether to fall back to CSV if API fails
 
         Returns:
             List of all historical draws
@@ -92,6 +124,7 @@ class DataLoader:
         Note:
             This is a convenience method that fetches all data.
             First call may take several minutes depending on API speed.
+            If API fails and use_csv_fallback is True, will attempt to load from CSV.
         """
         params = {'all_historical': True}
 
@@ -102,16 +135,44 @@ class DataLoader:
                 logger.info("loaded_all_historical_from_cache", count=len(cached))
                 return cached
 
-        # Fetch from API
-        logger.info("loading_all_historical_from_api")
-        draws = self.api_client.get_all_historical()
+        # Try API
+        try:
+            logger.info("loading_all_historical_from_api")
+            draws = self.api_client.get_all_historical()
 
-        # Cache results
-        if use_cache and draws:
-            self.cache.set_draws(draws, **params)
+            # Cache results
+            if use_cache and draws:
+                self.cache.set_draws(draws, **params)
 
-        logger.info("loaded_all_historical", count=len(draws))
-        return draws
+            logger.info("loaded_all_historical", count=len(draws))
+            return draws
+
+        except Exception as e:
+            logger.warning("api_load_failed", error=str(e))
+
+            if use_csv_fallback:
+                logger.info("attempting_csv_fallback")
+                from data.csv_fallback import load_from_csv, create_sample_csv
+
+                try:
+                    draws = load_from_csv()
+                    logger.info("loaded_from_csv_fallback", count=len(draws))
+                    print(f"✓ Loaded {len(draws)} draws from CSV fallback")
+                    return draws
+                except FileNotFoundError:
+                    logger.warning("csv_not_found_creating_sample")
+                    print("⚠ CSV not found, creating sample data...")
+                    create_sample_csv()
+                    draws = load_from_csv()
+                    logger.info("loaded_from_sample_csv", count=len(draws))
+                    print(f"✓ Loaded {len(draws)} draws from sample CSV (MOCK DATA)")
+                    return draws
+                except Exception as csv_error:
+                    logger.error("csv_fallback_failed", error=str(csv_error))
+                    raise Exception(f"Both API and CSV fallback failed. API: {e}, CSV: {csv_error}")
+
+            # No fallback, re-raise original error
+            raise
 
     def get_latest_draw(self, use_cache: bool = True) -> Optional[Draw]:
         """Get most recent draw

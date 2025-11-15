@@ -451,7 +451,8 @@ class FeatureEngineer:
         features['star_gap'] = self.draws_df[['s1', 's2']].apply(
             lambda x: x['s2'] - x['s1'], axis=1
         )
-        features['star_sum_even'] = (features['star_sum'] % 2 == 0).astype(int)
+        star_sum = self.draws_df['stars'].apply(sum)
+        features['star_sum_even'] = (star_sum % 2 == 0).astype(int)
 
         return features
 

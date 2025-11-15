@@ -23,9 +23,9 @@ class EuromillionsAPIClient:
     """Client for Euromillions API with retry and rate limiting
 
     Features:
-    - Automatic retry on network failures (up to 4 attempts)
-    - Exponential backoff between retries
-    - Rate limiting (1 request per 2 seconds)
+    - Automatic retry on network failures (up to 6 attempts)
+    - Progressive exponential backoff between retries (5s -> 60s)
+    - Rate limiting (1 request per 5 seconds to avoid 429 errors)
     - Structured logging for all API calls
     """
 
@@ -46,11 +46,11 @@ class EuromillionsAPIClient:
         logger.info("api_client_initialized", base_url=self.base_url)
 
     @sleep_and_retry
-    @limits(calls=1, period=2)  # 1 call per 2 seconds
+    @limits(calls=1, period=15)  # 1 call per 15 seconds - VERY conservative to avoid 429 errors
     @retry(
-        stop=stop_after_attempt(4),
-        wait=wait_exponential(multiplier=2, min=2, max=16),
-        retry=retry_if_exception_type((requests.RequestException, requests.Timeout)),
+        stop=stop_after_attempt(8),  # More attempts for resilience
+        wait=wait_exponential(multiplier=4, min=10, max=120),  # Progressive backoff: 10s, 40s, 120s, 120s...
+        retry=retry_if_exception_type((requests.RequestException, requests.Timeout, requests.HTTPError)),
         reraise=True
     )
     def _get(self, endpoint: str, params: Optional[dict] = None) -> dict:

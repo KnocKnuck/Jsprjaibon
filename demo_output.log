@@ -1,0 +1,81 @@
+================================================================================
+EUROMILLIONS ML PREDICTOR - SYNTHETIC DATA DEMONSTRATION
+================================================================================
+
+📊 Generating realistic synthetic data...
+Note: API currently blocked (403). Using synthetic data matching
+real Euromillions statistical patterns.
+
+Generating 500 draws spanning ~3 years...
+✓ Generated 500 synthetic draws
+  Date range: 2021-01-04 to 2025-10-17
+
+📈 Data Statistics (showing realism):
+  Most common numbers: [19, 20, 27, 33, 3, 40, 45, 42, 50, 28]
+  Least common numbers: [31, 12, 26, 17, 13, 6, 29, 37, 25, 2]
+  Draws with winners: 14 (2.8%)
+
+================================================================================
+RUNNING COMPLETE ML ANALYSIS PIPELINE
+================================================================================
+2025-11-15 21:39:15.762484: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.
+2025-11-15 21:39:15.763036: I tensorflow/core/util/port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2025-11-15 21:39:15.855458: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 AVX512F AVX512_VNNI FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2025-11-15 21:39:20.009536: I tensorflow/core/util/port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2025-11-15 21:39:20.023621: I external/local_xla/xla/tsl/cuda/cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.
+
+Phase 2: Model Training
+
+================================================================================
+PHASE 2: MODEL TRAINING - Data Preparation
+================================================================================
+
+Extracting features from draws...
+Extracting features...
+  → Basic statistics...
+  → Frequency features...
+  → Temporal features...
+  → Pattern features...
+  → Statistical features...
+  → Lag features...
+  → Advanced features...
+✓ Extracted 146 features from 500 draws
+
+Normalizing features...
+
+Preparing target labels...
+
+✓ Data preparation complete:
+  Features shape: (500, 146)
+  Numbers targets: (500, 50)
+  Stars targets: (500, 12)
+
+--------------------------------------------------------------------------------
+Training Random Forest Model
+--------------------------------------------------------------------------------
+Training Random Forest on 500 samples...
+Features shape: (500, 146), Numbers: (500, 50), Stars: (500, 12)
+Training main numbers model...
+Training star numbers model...
+✓ Random Forest training complete
+
+✓ Random Forest trained in 21.57 seconds
+✓ Model saved to /home/user/Jsprjaibon/models/random_forest_real_data.pkl
+
+Phase 3: Backtesting
+
+================================================================================
+PHASE 3: BACKTESTING (6 months)
+================================================================================
+Traceback (most recent call last):
+  File "/home/user/Jsprjaibon/demo_with_synthetic_data.py", line 149, in <module>
+    backtest_results = run_backtest(rf_model, engineer, normalizer, all_draws, months=6)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/Jsprjaibon/real_data_analysis.py", line 308, in run_backtest
+    results = backtest_engine.run_backtest(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/Jsprjaibon/euromillions_ml/prediction/backtest.py", line 177, in run_backtest
+    print(f"Backtesting on {len(test_draws)} draws ({start_date.date()} to {end_date.date()})...")
+                                                     ^^^^^^^^^^^^^^^
+AttributeError: 'datetime.date' object has no attribute 'date'

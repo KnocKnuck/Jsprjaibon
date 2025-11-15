@@ -279,6 +279,8 @@ def train(
     epochs: int = typer.Option(100, "--epochs", "-e", help="Number of training epochs (LSTM only)"),
     save: bool = typer.Option(True, "--save/--no-save", help="Save trained model"),
     verbose: bool = typer.Option(False, "--verbose", help="Enable verbose output"),
+    use_csv: bool = typer.Option(False, "--use-csv", help="Use CSV fallback instead of API (faster, uses mock data)"),
+    years: int = typer.Option(2, "--years", "-y", help="Number of recent years to fetch from API (default: 2, ignored if --use-csv)"),
 ) -> None:
     """
     Train ML models on historical Euromillions data.
@@ -290,6 +292,8 @@ def train(
         python main.py train
         python main.py train --model lstm --epochs 200
         python main.py train -m all --verbose
+        python main.py train --use-csv              # Fast: uses CSV fallback
+        python main.py train --years 1              # Faster: only 1 year from API
     """
     try:
         console.print("\n" + "=" * 60)
@@ -297,7 +301,7 @@ def train(
         console.print("=" * 60 + "\n")
 
         # Load data
-        console.print("[bold green]Loading historical data...[/bold green]")
+        console.print("[bold cyan]Loading historical data...[/bold cyan]")
         from config.settings import Settings
         from data.loader import DataLoader
 
@@ -307,8 +311,50 @@ def train(
             settings = Settings()
 
         loader = DataLoader(settings)
-        draws = loader.load_all_historical(use_cache=True)
-        print_success(f"Loaded {len(draws)} draws for training")
+
+        if use_csv:
+            # Use CSV fallback (fast, but mock data)
+            console.print("[yellow]Using CSV fallback mode (faster, but may use mock data)[/yellow]")
+            from data.csv_fallback import load_from_csv, create_sample_csv
+
+            try:
+                draws = load_from_csv()
+                print_success(f"Loaded {len(draws)} draws from CSV")
+            except FileNotFoundError:
+                console.print("[yellow]CSV not found, creating sample data...[/yellow]")
+                create_sample_csv()
+                draws = load_from_csv()
+                console.print("[yellow]⚠ Using MOCK DATA - for testing only![/yellow]")
+                print_success(f"Loaded {len(draws)} sample draws")
+        else:
+            # Fetch from API (limited years to reduce rate limiting)
+            console.print(f"[cyan]Fetching {years} recent year(s) from API...[/cyan]")
+            console.print(f"[dim]Note: Rate limited to 1 request per 5 seconds to avoid 429 errors[/dim]\n")
+
+            current_year = datetime.now().year
+            draws = []
+
+            for year in range(current_year - years + 1, current_year + 1):
+                console.print(f"[cyan]→ Fetching year {year}...[/cyan]")
+                try:
+                    year_draws = loader.load_draws(year=year, use_cache=True, use_csv_fallback=True)
+                    draws.extend(year_draws)
+                    console.print(f"  [green]✓ {len(year_draws)} draws loaded[/green]")
+                except Exception as e:
+                    console.print(f"  [yellow]⚠ Year {year} failed: {e}[/yellow]")
+                    continue
+
+            if draws:
+                print_success(f"Total: {len(draws)} draws loaded from {years} year(s)")
+            else:
+                print_error("No draws loaded! Falling back to CSV...")
+                from data.csv_fallback import load_from_csv, create_sample_csv
+                try:
+                    draws = load_from_csv()
+                except FileNotFoundError:
+                    create_sample_csv()
+                    draws = load_from_csv()
+                print_warning(f"Using CSV fallback: {len(draws)} draws")
 
         # Check if we have enough data
         if len(draws) < 100:

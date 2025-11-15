@@ -174,7 +174,10 @@ class BacktestEngine:
         # Get test draws
         test_draws = [d for d in all_draws if start_date <= d.date <= end_date]
 
-        print(f"Backtesting on {len(test_draws)} draws ({start_date.date()} to {end_date.date()})...")
+        # Safe date conversion for display
+        start_str = start_date.date() if hasattr(start_date, 'date') else start_date
+        end_str = end_date.date() if hasattr(end_date, 'date') else end_date
+        print(f"Backtesting on {len(test_draws)} draws ({start_str} to {end_str})...")
 
         for i, test_draw in enumerate(test_draws):
             # Train on data BEFORE this draw
